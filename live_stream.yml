@@ -3,7 +3,7 @@ name: 24/7 YouTube Live Stream
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *' # Har 6 ghante me auto-restart takki stream crash na ho
+    - cron: '0 */6 * * *' # Har 6 ghante me auto-restart takki stream lagatar chalti rahe
 
 jobs:
   stream:
@@ -16,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-python: '3.10'
+        python-version: '3.10'
 
     - name: Install Dependencies
       run: |
@@ -35,7 +35,7 @@ jobs:
         from googleapiclient.discovery import build
         from google.oauth2.credentials import Credentials
 
-        # Google Drive setup
+        # Google Drive connection setup
         creds = Credentials(
             token=None,
             refresh_token=os.environ.get("GD_REFRESH_TOKEN").strip(),
@@ -45,20 +45,22 @@ jobs:
         )
         drive_service = build('drive', 'v3', credentials=creds)
         
-        # Hardcoded Video File ID from your Google Drive
-        # TODO: Apni video ka exact Drive File ID niche lagao!
-        VIDEO_FILE_ID = "16F9CmM4abxAvX_nUPyAKXSSl94T0xUMV" 
+        # Your specific Spider-Man 2 Drive File ID
+        VIDEO_FILE_ID = "1696NuPwkopyMiiG561o7Nz30fgwVfnGi" 
         
-        print("📥 Downloading large video file from Google Drive...")
+        print("📥 Downloading Spider-Man 2 video from Google Drive...")
         request = drive_service.files().get_media(fileId=VIDEO_FILE_ID)
         with open("live_video.mp4", "wb") as f:
             f.write(request.execute())
         print("✅ Download Complete!")
         EOF
 
-        echo "🚀 Starting Endless Live Stream Loop..."
+        echo "🚀 Starting Endless Live Stream Loop with Custom Description..."
         while true; do
-          ffmpeg -re -i live_video.mp4 -c:v libx264 -preset veryfast -b:v 2500k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY" || true
+          ffmpeg -re -i live_video.mp4 \
+            -metadata title="Marvel’s Spider-Man 2 | PS5 Vertical live stream 🕷️🔥" \
+            -metadata comment="🎮 Marvel’s Spider-Man 2 | PS5 Vertical live stream 🕷️🔥\n\nRight now I’m playing Marvel’s Spider-Man 2 on PS5 — super smooth gameplay, cinematic action, and full New York City vibes!\n🔴 Live Gameplay\n🎮 No commentary | Pure gameplay experience\n🕷️ High-quality graphics | Fast-paced combat | Story missions\n🌃 NYC nights — crime never sleeps, and neither does Spider-Man\n\nIf you love Spider-Man games, PS5 gameplay, or action-adventure titles, make sure to subscribe to the channel and don’t forget to join the live streams! 🙌\n💬 Got any questions? Want me to play a specific mission, suit, or challenge next? Just drop it in the comments or live chat!\n⸻\n🔥 Hashtags\n#spiderman2\n#SpiderManPS5\n#PS5Gameplay\n#GamingShorts\n#LiveGameplay\n#SpiderManLive\n#PS5Live\n#MarvelSpiderMan\n#consolegaming\n#actionadventure" \
+            -c:v libx264 -preset veryfast -b:v 2500k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY" || true
           echo "🔄 Video finished, restarting loop..."
           sleep 2
         done
