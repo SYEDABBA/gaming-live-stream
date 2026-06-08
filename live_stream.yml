@@ -1,0 +1,30 @@
+name: 24/7 YouTube Live Stream
+
+on:
+  workflow_dispatch: # Tum manually button daba kar start kar sako
+  schedule:
+    - cron: '0 */6 * * *' # Har 6 ghante me server automatically restart hoga taaki live band na ho
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install FFmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+
+    - name: Start 24/7 Endless Stream
+      env:
+        STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
+      run: |
+        echo "🚀 Starting Endless Live Stream Loop..."
+        while true; do
+          ffmpeg -re -i live_video.mp4 -c:v libx264 -preset veryfast -b:v 2500k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY" || true
+          echo "🔄 Video finished or crashed, restarting loop..."
+          sleep 2
+        done
