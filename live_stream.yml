@@ -1,9 +1,9 @@
 name: 24/7 YouTube Live Stream
 
 on:
-  workflow_dispatch: # Tum manually button daba kar start kar sako
+  workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *' # Har 6 ghante me server automatically restart hoga taaki live band na ho
+    - cron: '0 */6 * * *' # Har 6 ghante me auto-restart takki stream crash na ho
 
 jobs:
   stream:
@@ -13,18 +13,52 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Install FFmpeg
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ffmpeg
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-python: '3.10'
 
-    - name: Start 24/7 Endless Stream
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install -y ffmpeg
+        pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+    - name: Download Video From Drive & Stream
       env:
         STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
+        GD_REFRESH_TOKEN: ${{ secrets.GD_REFRESH_TOKEN }}
+        YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+        YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
       run: |
+        python - <<EOF
+        import os
+        from googleapiclient.discovery import build
+        from google.oauth2.credentials import Credentials
+
+        # Google Drive setup
+        creds = Credentials(
+            token=None,
+            refresh_token=os.environ.get("GD_REFRESH_TOKEN").strip(),
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=os.environ.get("YT_CLIENT_ID").strip(),
+            client_secret=os.environ.get("YT_CLIENT_SECRET").strip()
+        )
+        drive_service = build('drive', 'v3', credentials=creds)
+        
+        # Hardcoded Video File ID from your Google Drive
+        # TODO: Apni video ka exact Drive File ID niche lagao!
+        VIDEO_FILE_ID = "16F9CmM4abxAvX_nUPyAKXSSl94T0xUMV" 
+        
+        print("📥 Downloading large video file from Google Drive...")
+        request = drive_service.files().get_media(fileId=VIDEO_FILE_ID)
+        with open("live_video.mp4", "wb") as f:
+            f.write(request.execute())
+        print("✅ Download Complete!")
+        EOF
+
         echo "🚀 Starting Endless Live Stream Loop..."
         while true; do
           ffmpeg -re -i live_video.mp4 -c:v libx264 -preset veryfast -b:v 2500k -maxrate 2500k -bufsize 5000k -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY" || true
-          echo "🔄 Video finished or crashed, restarting loop..."
+          echo "🔄 Video finished, restarting loop..."
           sleep 2
         done
