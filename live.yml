@@ -1,0 +1,35 @@
+name: 24-Hour Continuous Live Stream
+
+on:
+  workflow_dispatch: # Manual chalu karne ke liye
+  schedule:
+    - cron: '0 */5 * * *' # Har 5 ghante me automatic chalega taaki stream kabhi ruke na
+
+jobs:
+  live_stream:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python Environment
+      uses: actions/setup-python@v5
+      with:
+        python-style: '3.10'
+
+    - name: Install FFmpeg and Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+        pip install requests
+
+    - name: Run YUGRAAL Live Stream Engine
+      env:
+        STREAM_VIDEO_ID: ${{ secrets.STREAM_VIDEO_ID }}
+        GD_REFRESH_TOKEN: ${{ secrets.GD_REFRESH_TOKEN }}
+        GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+        GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        YT_STREAM_KEY: ${{ secrets.YT_STREAM_KEY }}
+      run: |
+        python live_stream.py
