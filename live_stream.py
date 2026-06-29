@@ -1,40 +1,44 @@
 import os
 import subprocess
-import requests
+import sys
 
-def download_video_from_drive():
+def download_video_with_gdown():
     video_id = os.environ.get("STREAM_VIDEO_ID")
-    refresh_token = os.environ.get("GD_REFRESH_TOKEN")
-    client_id = os.environ.get("GOOGLE_CLIENT_ID")
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    if not video_id:
+        print("❌ Error: STREAM_VIDEO_ID GitHub Secrets me nahi mili!")
+        sys.exit(1)
+        
+    video_id = video_id.strip()
+    print(f"⏳ Target File ID: {video_id}")
+    print("📦 gdown library install ho rahi hai...")
     
-    print("⏳ Google Drive se video download ho rahi hai...")
+    # gdown install karna jo large drive files ke liye best hai
+    subprocess.run([sys.executable, "-m", "pip", "install", "gdown"])
     
-    # Access Token lena
-    token_url = "https://oauth2.googleapis.com/token"
-    token_data = {
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "refresh_token": refresh_token,
-        "grant_type": "refresh_grant"
-    }
-    r = requests.post(token_url, data=token_data)
-    access_token = r.json().get("access_token")
+    print("📥 gdown se direct large file download shuru ho rahi hai...")
     
-    # File download karna
-    download_url = f"https://www.googleapis.com/drive/v3/files/{video_id}?alt=media"
-    headers = {"Authorization": f"Bearer {access_token}"}
+    # Direct command line download pipeline
+    output_file = "stream_video.mp4"
+    gdown_cmd = ["gdown", "--id", video_id, "-O", output_file, "--remaining-ok"]
     
-    response = requests.get(download_url, headers=headers, stream=True)
-    if response.status_code == 200:
-        with open("stream_video.mp4", "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-        print("✅ Video successfully download ho gayi: stream_video.mp4")
+    result = subprocess.run(gdown_cmd)
+    
+    if result.returncode == 0 and os.path.exists(output_file):
+        print(f"✅ Success! 1.39 GB Video perfectly download ho gayi: {output_file}")
     else:
-        print(f"❌ Download failed! Status code: {response.status_code}")
-        exit(1)
+        print("❌ gdown download fail hua! Alternative browser route try kar rahe hain...")
+        import requests
+        download_url = f"https://docs.google.com/uc?export=download&id={video_id}&confirm=t"
+        response = requests.get(download_url, stream=True)
+        if response.status_code == 200:
+            with open(output_file, "wb") as f:
+                for chunk in response.iter_content(chunk_size=1024 * 1024):
+                    if chunk:
+                        f.write(chunk)
+            print("✅ Video successfully downloaded via alternative route!")
+        else:
+            print(f"❌ Dono methods fail ho gaye. Status: {response.status_code}")
+            sys.exit(1)
 
 def start_live_stream():
     stream_url = "rtmp://a.rtmp.youtube.com/live2"
@@ -42,33 +46,32 @@ def start_live_stream():
     
     if not stream_key:
         print("❌ Error: YT_STREAM_KEY nahi mili!")
-        exit(1)
+        sys.exit(1)
         
-    full_stream_path = f"{stream_url}/{stream_key}"
+    full_stream_path = f"{stream_url}/{stream_key.strip()}"
     
-    # FFmpeg command jo video ko endless loop (repeat) me live stream karegi
     ffmpeg_cmd = [
         "ffmpeg",
-        "-re",                          # Real-time speed par stream karne ke liye
-        "-stream_loop", "-1",           # Endless loop (-1 matlab hamesha chalta rahega)
-        "-i", "stream_video.mp4",       # Input file name
-        "-c:v", "libx264",              # Video codec
-        "-preset", "veryfast",          # CPU standard speed
-        "-b:v", "3000k",                # Video Bitrate (720p/1080p ke liye best)
+        "-re",
+        "-stream_loop", "-1",
+        "-i", "stream_video.mp4",
+        "-c:v", "libx264",
+        "-preset", "veryfast",
+        "-b:v", "3000k",
         "-maxrate", "3000k",
         "-bufsize", "6000k",
         "-pix_fmt", "yuv420p",
-        "-g", "60",                     # Keyframe interval
-        "-c:a", "aac",                  # Audio codec
-        "-b:a", "128k",                 # Audio Bitrate
+        "-g", "60",
+        "-c:a", "aac",
+        "-b:a", "128k",
         "-ar", "44100",
-        "-f", "flv",                    # YouTube format
-        full_stream_path                # Destination URL
+        "-f", "flv",
+        full_stream_path
     ]
     
-    print("📺 FFmpeg Live stream shuru kar raha hai... YouTube Dashboard check karo!")
+    print("📺 FFmpeg Engine Active: Live stream push shuru ho raha hai...")
     subprocess.run(ffmpeg_cmd)
 
 if __name__ == "__main__":
-    download_video_from_drive()
+    download_video_with_gdown()
     start_live_stream()
