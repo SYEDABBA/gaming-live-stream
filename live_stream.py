@@ -16,10 +16,17 @@ def download_video_from_drive():
         "client_id": client_id,
         "client_secret": client_secret,
         "refresh_token": refresh_token,
-        "grant_type": "refresh_grant"
+        "grant_type": "refresh_token"  # <-- YAHAN FIX KIYA HAI!
     }
     r = requests.post(token_url, data=token_data)
-    access_token = r.json().get("access_token")
+    
+    # Debug karne ke liye response check karna
+    response_json = r.json()
+    access_token = response_json.get("access_token")
+    
+    if not access_token:
+        print(f"❌ Token Exchange Failed! Response: {response_json}")
+        exit(1)
     
     # File download karna
     download_url = f"https://www.googleapis.com/drive/v3/files/{video_id}?alt=media"
@@ -46,24 +53,23 @@ def start_live_stream():
         
     full_stream_path = f"{stream_url}/{stream_key}"
     
-    # FFmpeg command jo video ko endless loop (repeat) me live stream karegi
     ffmpeg_cmd = [
         "ffmpeg",
-        "-re",                          # Real-time speed par stream karne ke liye
-        "-stream_loop", "-1",           # Endless loop (-1 matlab hamesha chalta rahega)
-        "-i", "stream_video.mp4",       # Input file name
-        "-c:v", "libx264",              # Video codec
-        "-preset", "veryfast",          # CPU standard speed
-        "-b:v", "3000k",                # Video Bitrate (720p/1080p ke liye best)
+        "-re",
+        "-stream_loop", "-1",
+        "-i", "stream_video.mp4",
+        "-c:v", "libx264",
+        "-preset", "veryfast",
+        "-b:v", "3000k",
         "-maxrate", "3000k",
         "-bufsize", "6000k",
         "-pix_fmt", "yuv420p",
-        "-g", "60",                     # Keyframe interval
-        "-c:a", "aac",                  # Audio codec
-        "-b:a", "128k",                 # Audio Bitrate
+        "-g", "60",
+        "-c:a", "aac",
+        "-b:a", "128k",
         "-ar", "44100",
-        "-f", "flv",                    # YouTube format
-        full_stream_path                # Destination URL
+        "-f", "flv",
+        full_stream_path
     ]
     
     print("📺 FFmpeg Live stream shuru kar raha hai... YouTube Dashboard check karo!")
