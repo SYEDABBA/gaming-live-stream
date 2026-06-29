@@ -21,21 +21,25 @@ def download_video_from_drive():
     r = requests.post(token_url, data=token_data)
     response_json = r.json()
     
-    # Agar token nahi milta toh yahan exact error print hoga
     if "access_token" not in response_json:
         print(f"❌ Token Exchange Failed! Google Response: {response_json}")
         exit(1)
         
     access_token = response_json.get("access_token")
-    print("✅ Access Token mil gaya! Video download shuru ho rahi hai...")
+    print("✅ Access Token mil gaya! Large video file download shuru ho rahi hai...")
     
-    download_url = f"https://www.googleapis.com/drive/v3/files/{video_id}?alt=media"
+    # Large files download karne ke liye exact reliable endpoint url:
+    download_url = f"https://www.googleapis.com/drive/v3/files/{video_id.strip()}"
+    params = {"alt": "media"}
     headers = {"Authorization": f"Bearer {access_token}"}
     
-    response = requests.get(download_url, headers=headers, stream=True)
+    # Stream set kiya hai taaki RAM crash na ho aur chunk by chunk download ho
+    response = requests.get(download_url, headers=headers, params=params, stream=True)
+    
     if response.status_code == 200:
+        print("📥 Data blocks mil rahe hain, local file me write ho raha hai...")
         with open("stream_video.mp4", "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
+            for chunk in response.iter_content(chunk_size=1024 * 1024): # 1MB chunks
                 if chunk:
                     f.write(chunk)
         print("✅ 1.39 GB Video perfectly download ho gayi!")
