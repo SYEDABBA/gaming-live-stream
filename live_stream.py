@@ -8,27 +8,27 @@ def download_video_from_drive():
     client_id = os.environ.get("GOOGLE_CLIENT_ID")
     client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
     
-    print("⏳ Google Drive se video download ho rahi hai...")
+    print("⏳ Google Drive se naya token request ho raha hai...")
     
-    # Access Token lena
     token_url = "https://oauth2.googleapis.com/token"
     token_data = {
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "refresh_token": refresh_token,
-        "grant_type": "refresh_token"  # <-- YAHAN FIX KIYA HAI!
+        "client_id": client_id.strip() if client_id else "",
+        "client_secret": client_secret.strip() if client_secret else "",
+        "refresh_token": refresh_token.strip() if refresh_token else "",
+        "grant_type": "refresh_token"
     }
+    
     r = requests.post(token_url, data=token_data)
-    
-    # Debug karne ke liye response check karna
     response_json = r.json()
-    access_token = response_json.get("access_token")
     
-    if not access_token:
-        print(f"❌ Token Exchange Failed! Response: {response_json}")
+    # Agar token nahi milta toh yahan exact error print hoga
+    if "access_token" not in response_json:
+        print(f"❌ Token Exchange Failed! Google Response: {response_json}")
         exit(1)
+        
+    access_token = response_json.get("access_token")
+    print("✅ Access Token mil gaya! Video download shuru ho rahi hai...")
     
-    # File download karna
     download_url = f"https://www.googleapis.com/drive/v3/files/{video_id}?alt=media"
     headers = {"Authorization": f"Bearer {access_token}"}
     
@@ -38,9 +38,10 @@ def download_video_from_drive():
             for chunk in response.iter_content(chunk_size=8192):
                 if chunk:
                     f.write(chunk)
-        print("✅ Video successfully download ho gayi: stream_video.mp4")
+        print("✅ 1.39 GB Video perfectly download ho gayi!")
     else:
         print(f"❌ Download failed! Status code: {response.status_code}")
+        print(f"Google Drive Response: {response.text}")
         exit(1)
 
 def start_live_stream():
@@ -51,7 +52,7 @@ def start_live_stream():
         print("❌ Error: YT_STREAM_KEY nahi mili!")
         exit(1)
         
-    full_stream_path = f"{stream_url}/{stream_key}"
+    full_stream_path = f"{stream_url}/{stream_key.strip()}"
     
     ffmpeg_cmd = [
         "ffmpeg",
@@ -72,7 +73,7 @@ def start_live_stream():
         full_stream_path
     ]
     
-    print("📺 FFmpeg Live stream shuru kar raha hai... YouTube Dashboard check karo!")
+    print("📺 FFmpeg Engine Active: Live push shuru ho raha hai...")
     subprocess.run(ffmpeg_cmd)
 
 if __name__ == "__main__":
