@@ -1,39 +1,29 @@
 import os
 import subprocess
 import sys
+import time
 
 def download_video_with_gdown():
     video_id = "1jXxRR2tpQXNrwj_jeK2DS0o-sHovkvzE"
-    
     print(f"⏳ Target File ID: {video_id}")
-    print("📦 gdown library install ho rahi hai...")
     
-    # gdown install karna jo large drive files ke liye best hai
-    subprocess.run([sys.executable, "-m", "pip", "install", "gdown"])
-    
-    print("📥 gdown se direct large file download shuru ho rahi hai...")
+    # Install gdown quietly
+    subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "gdown"])
     
     output_file = "stream_video.mp4"
+    if os.path.exists(output_file):
+        print("✅ Video pehle se downloaded hai.")
+        return
+        
+    print("📥 gdown se video download ho rahi hai...")
     gdown_cmd = ["gdown", "--id", video_id, "-O", output_file, "--remaining-ok"]
-    
     result = subprocess.run(gdown_cmd)
     
     if result.returncode == 0 and os.path.exists(output_file):
-        print(f"✅ Success! 1.39 GB Video perfectly download ho gayi: {output_file}")
+        print(f"✅ Success! Video download ho gayi: {output_file}")
     else:
-        print("❌ gdown download fail hua! Alternative browser route try kar rahe hain...")
-        import requests
-        download_url = f"https://docs.google.com/uc?export=download&id={video_id}&confirm=t"
-        response = requests.get(download_url, stream=True)
-        if response.status_code == 200:
-            with open(output_file, "wb") as f:
-                for chunk in response.iter_content(chunk_size=1024 * 1024):
-                    if chunk:
-                        f.write(chunk)
-            print("✅ Video successfully downloaded via alternative route!")
-        else:
-            print(f"❌ Dono methods fail ho gaye. Status: {response.status_code}")
-            sys.exit(1)
+        print("❌ Download fail hua!")
+        sys.exit(1)
 
 def start_live_stream():
     stream_url = "rtmp://a.rtmp.youtube.com/live2"
@@ -45,10 +35,12 @@ def start_live_stream():
         
     full_stream_path = f"{stream_url}/{stream_key.strip()}"
     
+    # FFmpeg standard continuous stream configuration
     ffmpeg_cmd = [
         "ffmpeg",
+        "-nostdin",                     # Very Important: Terminal input errors se bachata hai
         "-re",
-        "-stream_loop", "-1",           # Loops indefinitely
+        "-stream_loop", "-1",           # Infinite loop
         "-i", "stream_video.mp4",
         "-c:v", "libx264",
         "-preset", "veryfast",
@@ -64,11 +56,15 @@ def start_live_stream():
         full_stream_path
     ]
     
-    print("📺 FFmpeg Engine Active: Live stream push shuru ho raha hai...")
+    print("📺 YUGRAAL Live Engine: Pushing stream to YouTube...")
     
-    # .run() use karne se python process tab tak zinda rahegi jab tak stream chal rahi hai
-    process = subprocess.Popen(ffmpeg_cmd)
-    process.wait() # Yeh script ko tab tak rokk ke rakhega jab tak stream actively chal rahi hai!
+    # Run synchronously to hold the GitHub Action workflow alive
+    process = subprocess.run(ffmpeg_cmd)
+    
+    # Agar kisi wajah se stop ho jaye toh auto-restart lagane ke liye infinite hold:
+    if process.returncode != 0:
+        print("⚠️ Stream dropped. Restarting workflow hook...")
+        sys.exit(1)
 
 if __name__ == "__main__":
     download_video_with_gdown()
