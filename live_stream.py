@@ -3,12 +3,9 @@ import subprocess
 import sys
 
 def download_video_with_gdown():
-    video_id = os.environ.get("STREAM_VIDEO_ID")
-    if not video_id:
-        print("❌ Error: STREAM_VIDEO_ID GitHub Secrets me nahi mili!")
-        sys.exit(1)
-        
-    video_id = video_id.strip()
+    # Hardcoded direct video ID taaki GitHub Secrets ka dependence hi khatam ho jaye
+    video_id = "1jXxRR2tpQXNrwj_jeK2DS0o-sHovkvzE"
+    
     print(f"⏳ Target File ID: {video_id}")
     print("📦 gdown library install ho rahi hai...")
     
@@ -17,7 +14,6 @@ def download_video_with_gdown():
     
     print("📥 gdown se direct large file download shuru ho rahi hai...")
     
-    # Direct command line download pipeline
     output_file = "stream_video.mp4"
     gdown_cmd = ["gdown", "--id", video_id, "-O", output_file, "--remaining-ok"]
     
