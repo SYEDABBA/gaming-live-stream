@@ -3,7 +3,6 @@ import subprocess
 import sys
 
 def download_video_with_gdown():
-    # Hardcoded direct video ID taaki GitHub Secrets ka dependence hi khatam ho jaye
     video_id = "1jXxRR2tpQXNrwj_jeK2DS0o-sHovkvzE"
     
     print(f"⏳ Target File ID: {video_id}")
@@ -49,7 +48,7 @@ def start_live_stream():
     ffmpeg_cmd = [
         "ffmpeg",
         "-re",
-        "-stream_loop", "-1",
+        "-stream_loop", "-1",           # Loops indefinitely
         "-i", "stream_video.mp4",
         "-c:v", "libx264",
         "-preset", "veryfast",
@@ -66,7 +65,10 @@ def start_live_stream():
     ]
     
     print("📺 FFmpeg Engine Active: Live stream push shuru ho raha hai...")
-    subprocess.run(ffmpeg_cmd)
+    
+    # .run() use karne se python process tab tak zinda rahegi jab tak stream chal rahi hai
+    process = subprocess.Popen(ffmpeg_cmd)
+    process.wait() # Yeh script ko tab tak rokk ke rakhega jab tak stream actively chal rahi hai!
 
 if __name__ == "__main__":
     download_video_with_gdown()
