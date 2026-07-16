@@ -2,31 +2,40 @@ import os
 import subprocess
 import sys
 
-def download_video_with_gdown():
+def download_video_with_curl():
     video_id = "1jXxRR2tpQXNrwj_jeK2DS0o-sHovkvzE"
-    print(f"⏳ Target File ID: {video_id}")
-    
-    # Quietly install gdown
-    subprocess.run([sys.executable, "-m", "pip", "install", "--quiet", "gdown"])
-    
     output_file = "stream_video.mp4"
+    
     if os.path.exists(output_file):
         print("✅ Video pehle se downloaded hai.")
         return
         
-    print("📥 gdown se video download ho rahi hai...")
+    print("📥 Direct curl method se video download shuru ho rahi hai...")
     
-    # Naya and simple direct link format jo har version ke gdown me chalta hai
-    drive_link = f"https://drive.google.com/uc?id={video_id}"
-    gdown_cmd = ["gdown", drive_link, "-O", output_file]
+    # Direct browser simulation link for large drive files
+    download_url = f"https://docs.google.com/uc?export=download&id={video_id}&confirm=t"
     
-    result = subprocess.run(gdown_cmd)
+    # curl command jo large files ko seamlessly block-by-block download karti hai
+    curl_cmd = [
+        "curl", 
+        "-L", 
+        "-o", output_file, 
+        download_url
+    ]
     
-    if result.returncode == 0 and os.path.exists(output_file):
-        print(f"✅ Success! Video download ho gayi: {output_file}")
+    result = subprocess.run(curl_cmd)
+    
+    if result.returncode == 0 and os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+        print(f"✅ Success! Video perfectly download ho gayi via curl: {output_file}")
     else:
-        print("❌ Download fail hua! Alternative method try karte hain...")
-        sys.exit(1)
+        print("❌ Curl method fail hua! Secondary direct fetch try kar rahe hain...")
+        fallback_url = f"https://drive.google.com/uc?export=download&id={video_id}"
+        subprocess.run(["curl", "-L", "-o", output_file, fallback_url])
+        if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+            print("✅ Video downloaded via fallback curl!")
+        else:
+            print("❌ Dono methods fail ho gaye.")
+            sys.exit(1)
 
 def start_live_stream():
     stream_url = "rtmp://a.rtmp.youtube.com/live2"
@@ -66,5 +75,5 @@ def start_live_stream():
         sys.exit(1)
 
 if __name__ == "__main__":
-    download_video_with_gdown()
+    download_video_with_curl()
     start_live_stream()
