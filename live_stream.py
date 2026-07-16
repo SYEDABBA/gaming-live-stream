@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import re
 
 def download_video_with_curl():
     video_id = "1jXxRR2tpQXNrwj_jeK2DS0o-sHovkvzE"
@@ -10,32 +11,51 @@ def download_video_with_curl():
         print("✅ Video pehle se downloaded hai.")
         return
         
-    print("📥 Direct curl method se video download shuru ho rahi hai...")
+    print("📥 Google Drive virus warning bypass karke download shuru ho raha hai...")
     
-    # Direct browser simulation link for large drive files
-    download_url = f"https://docs.google.com/uc?export=download&id={video_id}&confirm=t"
+    # Step 1: Ek cookie file generate karke confirmation code nikalna
+    # Isse Google Drive ko lagega ki humne warning read karke 'Download Anyway' par click kar diya hai
+    cookie_file = "cookies.txt"
     
-    # curl command jo large files ko seamlessly block-by-block download karti hai
-    curl_cmd = [
-        "curl", 
-        "-L", 
-        "-o", output_file, 
+    # Pehla hit: confirmation code nikalne ke liye
+    cmd_confirm = f'curl -c {cookie_file} -s -L "https://docs.google.com/uc?export=download&id={video_id}"'
+    response = subprocess.check_output(cmd_confirm, shell=True).decode('utf-8', errors='ignore')
+    
+    # HTML me se confirmation token dundhna (e.g., confirm=t ooxx)
+    match = re.search(r'confirm=([0-9A-Za-z_]+)', response)
+    
+    if match:
+        confirm_token = match.group(1)
+        print(f"🔑 Confirmation token mil gaya: {confirm_token}")
+        download_url = f"https://docs.google.com/uc?export=download&confirm={confirm_token}&id={video_id}"
+    else:
+        print("⚠️ Direct confirmation token nahi mila, standard query try kar rahe hain...")
+        download_url = f"https://docs.google.com/uc?export=download&id={video_id}"
+        
+    # Step 2: Actual video file download karna cookies ke saath
+    print("🚀 Video file chunk-by-chunk download ho rahi hai...")
+    curl_download = [
+        "curl",
+        "-b", cookie_file,
+        "-L",
+        "-o", output_file,
         download_url
     ]
     
-    result = subprocess.run(curl_cmd)
+    result = subprocess.run(curl_download)
     
-    if result.returncode == 0 and os.path.exists(output_file) and os.path.getsize(output_file) > 0:
-        print(f"✅ Success! Video perfectly download ho gayi via curl: {output_file}")
+    # Clean up cookies file
+    if os.path.exists(cookie_file):
+        os.remove(cookie_file)
+        
+    if result.returncode == 0 and os.path.exists(output_file) and os.path.getsize(output_file) > 1000000:
+        file_size_gb = os.path.getsize(output_file) / (1024 * 1024 * 1024)
+        print(f"✅ Success! Real Video downloaded: {output_file} ({file_size_gb:.2f} GB)")
     else:
-        print("❌ Curl method fail hua! Secondary direct fetch try kar rahe hain...")
-        fallback_url = f"https://drive.google.com/uc?export=download&id={video_id}"
-        subprocess.run(["curl", "-L", "-o", output_file, fallback_url])
-        if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
-            print("✅ Video downloaded via fallback curl!")
-        else:
-            print("❌ Dono methods fail ho gaye.")
-            sys.exit(1)
+        print("❌ Download fail ho gaya ya corrupt file aayi hai.")
+        if os.path.exists(output_file):
+            print(f"File Size: {os.path.getsize(output_file)} bytes (Agar yeh chota hai, toh yeh video nahi text file hai)")
+        sys.exit(1)
 
 def start_live_stream():
     stream_url = "rtmp://a.rtmp.youtube.com/live2"
@@ -51,7 +71,7 @@ def start_live_stream():
         "ffmpeg",
         "-nostdin",
         "-re",
-        "-stream_loop", "-1",           # Infinite loop
+        "-stream_loop", "-1",
         "-i", "stream_video.mp4",
         "-c:v", "libx264",
         "-preset", "veryfast",
