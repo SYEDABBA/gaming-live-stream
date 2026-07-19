@@ -34,6 +34,4 @@ jobs:
       env:
         YT_STREAM_KEY: ${{ secrets.YT_STREAM_KEY }}
       run: |
-        # Tumhara purana FFmpeg loop command yahan aayega
-        # Example command:
-        ffmpeg -re -stream_loop -1 -i "TUMHARI_DROPBOX_URL" -vcodec libx264 -profile:v main -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k -acodec aac -b:a 128k -f flv "rtmp://a.rtmp.youtube.com/live2/$YT_STREAM_KEY"
+        ffmpeg -re -stream_loop -1 -i "https://www.dropbox.com/scl/fi/9glapboibpvfs3vkg3qji/Spider-Man-2-Stealth-on-Max-Settings-Looks-Unreal-720P_HD.mp4?rlkey=b5929gj61xjwb9y4wh6t09c57&st=m7rmiz1m&dl=1" -vcodec libx264 -profile:v main -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k -acodec aac -b:a 128k -f flv "rtmp://a.rtmp.youtube.com/live2/$YT_STREAM_KEY"
