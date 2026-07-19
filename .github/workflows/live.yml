@@ -1,13 +1,20 @@
 name: 24-Hour Continuous Live Stream
 
 on:
-  workflow_dispatch: # Manual chalu karne ke liye
+  workflow_dispatch: # Manual button ke liye
   schedule:
-    - cron: '0 */5 * * *' # Har 5 ghante me automatic chalega backup ke liye
+    - cron: '0 */5 * * *' # Har 5 ghante me naya trigger bheje ke liye
+
+# 🚫 LOCK SYSTEM: Ek waqt par sirf EK hi stream chalegi, doosri crash nahi karegi!
+concurrency:
+  group: youtube-live-stream
+  cancel-in-progress: false # Purane ko chalne dega, naye ko line me khada rakhega
 
 jobs:
   live_stream:
     runs-on: ubuntu-latest
+    # ⏱️ TIME LIMIT: 5 ghante 50 minute hote hi automatic safe close ho jayega
+    timeout-minutes: 350 
 
     steps:
     - name: Checkout Repository Code
@@ -16,16 +23,17 @@ jobs:
     - name: Set up Python Environment
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10' # Warnings thik kar di
+        python-version: '3.10'
 
     - name: Install FFmpeg and Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y ffmpeg
-        pip install requests
 
     - name: Run YUGRAAL Live Stream Engine
       env:
         YT_STREAM_KEY: ${{ secrets.YT_STREAM_KEY }}
       run: |
-        python live_stream.py
+        # Tumhara purana FFmpeg loop command yahan aayega
+        # Example command:
+        ffmpeg -re -stream_loop -1 -i "TUMHARI_DROPBOX_URL" -vcodec libx264 -profile:v main -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k -acodec aac -b:a 128k -f flv "rtmp://a.rtmp.youtube.com/live2/$YT_STREAM_KEY"
