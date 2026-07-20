@@ -1,37 +1,29 @@
-name: 24-Hour Continuous Live Stream
+name: YUGRAAL Live Stream Engine
 
 on:
-  workflow_dispatch: # Manual button ke liye
+  workflow_dispatch:
   schedule:
-    - cron: '0 */5 * * *' # Har 5 ghante me naya trigger bheje ke liye
+    - cron: '0 */5 * * *'
 
-# 🚫 LOCK SYSTEM: Ek waqt par sirf EK hi stream chalegi, doosri crash nahi karegi!
 concurrency:
   group: youtube-live-stream
-  cancel-in-progress: false # Purane ko chalne dega, naye ko line me khada rakhega
+  cancel-in-progress: true
 
 jobs:
   live_stream:
     runs-on: ubuntu-latest
-    # ⏱️ TIME LIMIT: 5 ghante 50 minute hote hi automatic safe close ho jayega
-    timeout-minutes: 350 
-
+    timeout-minutes: 350
     steps:
-    - name: Checkout Repository Code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up Python Environment
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
-    - name: Install FFmpeg and Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ffmpeg
-
-    - name: Run YUGRAAL Live Stream Engine
-      env:
-        YT_STREAM_KEY: ${{ secrets.YT_STREAM_KEY }}
-      run: |
-        ffmpeg -re -stream_loop -1 -i "https://www.dropbox.com/scl/fi/9glapboibpvfs3vkg3qji/Spider-Man-2-Stealth-on-Max-Settings-Looks-Unreal-720P_HD.mp4?rlkey=b5929gj61xjwb9y4wh6t09c57&st=m7rmiz1m&dl=1" -vcodec libx264 -profile:v main -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k -acodec aac -b:a 128k -f flv "rtmp://a.rtmp.youtube.com/live2/$YT_STREAM_KEY"
+      - name: Run YUGRAAL Stream
+        env:
+          YT_STREAM_KEY: ${{ secrets.YT_STREAM_KEY }}
+        run: |
+          ffmpeg -re -stream_loop -1 -i "https://www.dropbox.com/scl/fi/9glapboibpvfs3vkg3qji/Spider-Man-2-Stealth-on-Max-Settings-Looks-Unreal-720P_HD.mp4?rlkey=b5929gj61xjwb9y4wh6t09c57&st=m7rmiz1m&dl=1" -vcodec libx264 -profile:v main -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k -acodec aac -b:a 128k -f flv "rtmp://a.rtmp.youtube.com/live2/$YT_STREAM_KEY"
