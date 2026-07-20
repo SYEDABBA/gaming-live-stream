@@ -17,16 +17,24 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install FFmpeg
+      - name: Install FFmpeg and Wget
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg curl
+          sudo apt-get install -y ffmpeg wget
 
-      - name: Download Video Local
+      - name: Download Large Video File
         run: |
-          echo "📥 Downloading video from Dropbox..."
-          curl -L -o spider_video.mp4 "https://www.dropbox.com/scl/fi/9glapboibpvfs3vkg3qji/Spider-Man-2-Stealth-on-Max-Settings-Looks-Unreal-720P_HD.mp4?rlkey=b5929gj61xjwb9y4wh6t09c57&st=m7rmiz1m&dl=1"
-          echo "✅ Download complete!"
+          echo "📥 Downloading 1.4GB video from Dropbox..."
+          # wget badi files ke liye sabse best aur stable hai
+          wget -O spider_video.mp4 "https://www.dropbox.com/scl/fi/9glapboibpvfs3vkg3qji/Spider-Man-2-Stealth-on-Max-Settings-Looks-Unreal-720P_HD.mp4?rlkey=b5929gj61xjwb9y4wh6t09c57&st=m7rmiz1m&dl=1"
+          
+          # Check karne ke liye ki file sahi se download hui ya nahi (kam se kam 500MB se badi honi chahiye)
+          FILESIZE=$(stat -c%s "spider_video.mp4")
+          if [ $FILESIZE -lt 500000000 ]; then
+            echo "❌ Error: File download failed or incomplete!"
+            exit 1
+          fi
+          echo "✅ Complete 1.4GB video downloaded successfully!"
 
       - name: Run YUGRAAL Stream
         env:
