@@ -26,10 +26,10 @@ jobs:
       - name: Download Video from Google Drive
         run: |
           echo "📥 Downloading large video from Google Drive..."
-          # Tumhari direct Spider-Man file ID yahan set kar di hai
-          gdown --id "1jXxRR2tpQXNrwj_jeK2DS0o-sHovkvzE" -O spider_video.mp4 --remaining-ok
+          # Naye gdown ke mutabik direct streamlink URL bina kisi extra flags ke
+          gdown "https://drive.google.com/uc?id=1jXxRR2tpQXNrwj_jeK2DS0o-sHovkvzE" -O spider_video.mp4
           
-          # Safety check (File downloaded completely)
+          # Safety check (Confirm file downloaded completely)
           FILESIZE=$(stat -c%s "spider_video.mp4")
           echo "Downloaded file size: $FILESIZE bytes"
           if [ $FILESIZE -lt 500000000 ]; then
