@@ -17,24 +17,26 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install FFmpeg and Wget
+      - name: Install FFmpeg and Python tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg wget
+          sudo apt-get install -y ffmpeg python3-pip
+          pip3 install gdown
 
-      - name: Download Large Video File
+      - name: Download Video from Google Drive
         run: |
-          echo "📥 Downloading 1.4GB video from Dropbox..."
-          # wget badi files ke liye sabse best aur stable hai
-          wget -O spider_video.mp4 "https://www.dropbox.com/scl/fi/9glapboibpvfs3vkg3qji/Spider-Man-2-Stealth-on-Max-Settings-Looks-Unreal-720P_HD.mp4?rlkey=b5929gj61xjwb9y4wh6t09c57&st=m7rmiz1m&dl=1"
+          echo "📥 Downloading large video from Google Drive..."
+          # Tumhari direct Spider-Man file ID yahan set kar di hai
+          gdown --id "1jXxRR2tpQXNrwj_jeK2DS0o-sHovkvzE" -O spider_video.mp4 --remaining-ok
           
-          # Check karne ke liye ki file sahi se download hui ya nahi (kam se kam 500MB se badi honi chahiye)
+          # Safety check (File downloaded completely)
           FILESIZE=$(stat -c%s "spider_video.mp4")
+          echo "Downloaded file size: $FILESIZE bytes"
           if [ $FILESIZE -lt 500000000 ]; then
-            echo "❌ Error: File download failed or incomplete!"
+            echo "❌ Error: Google Drive download failed or file is too small!"
             exit 1
           fi
-          echo "✅ Complete 1.4GB video downloaded successfully!"
+          echo "✅ Video downloaded successfully from Drive!"
 
       - name: Run YUGRAAL Stream
         env:
